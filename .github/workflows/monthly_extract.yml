@@ -1,0 +1,29 @@
+name: Monthly CoinGecko Extract
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"   # 06:00 UTC on the 1st of every month
+  workflow_dispatch:        # lets you trigger it manually from GitHub UI too
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r extract/requirements.txt
+
+      - name: Auth to GCP
+        run: |
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/key.json" >> $GITHUB_ENV
+
+      - name: Run extract
+        env:
+          GCP_PROJECT: dataform-505716
+        run: python extract/fetch_coingecko.py
