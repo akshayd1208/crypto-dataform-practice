@@ -2,8 +2,8 @@ name: Monthly CoinGecko Extract
 
 on:
   schedule:
-    - cron: "0 6 1 * *"   # 06:00 UTC on the 1st of every month
-  workflow_dispatch:        # lets you trigger it manually from GitHub UI too
+    - cron: "0 6 * * *"   # daily at 06:00 UTC
+  workflow_dispatch:
 
 jobs:
   extract:
