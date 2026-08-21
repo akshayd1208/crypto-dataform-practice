@@ -1,0 +1,45 @@
+config {
+  type: "incremental",
+  schema: "dataform_marts",
+  uniqueKey: ["coin_id", "valid_from"],
+  description: "SCD Type 2 history of coin market cap rank / name changes"
+}
+
+WITH source AS (
+  SELECT
+    coin_id,
+    symbol,
+    name,
+    market_cap_rank,
+    snapshot_date
+  FROM ${ref("stg_coin_snapshots")}
+  ${when(incremental(),
+    `WHERE snapshot_date > (SELECT MAX(valid_from) FROM ${self()})`
+  )}
+),
+
+ranked AS (
+  SELECT
+    *,
+    LAG(market_cap_rank) OVER (PARTITION BY coin_id ORDER BY snapshot_date) AS prev_rank
+  FROM source
+),
+
+changes AS (
+  SELECT *
+  FROM ranked
+  WHERE prev_rank IS NULL OR prev_rank != market_cap_rank
+)
+
+SELECT
+  coin_id,
+  symbol,
+  name,
+  market_cap_rank,
+  snapshot_date AS valid_from,
+  LEAD(snapshot_date) OVER (PARTITION BY coin_id ORDER BY snapshot_date) AS valid_to,
+  CASE
+    WHEN LEAD(snapshot_date) OVER (PARTITION BY coin_id ORDER BY snapshot_date) IS NULL
+    THEN TRUE ELSE FALSE
+  END AS is_current
+FROM changes
