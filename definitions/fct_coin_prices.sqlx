@@ -1,0 +1,21 @@
+config {
+  type: "incremental",
+  schema: "dataform_marts",
+  uniqueKey: ["coin_id", "snapshot_date"],
+  description: "Monthly price snapshots per coin, incrementally loaded"
+}
+
+SELECT
+  snapshot_date,
+  coin_id,
+  symbol,
+  name,
+  current_price,
+  market_cap,
+  total_volume,
+  price_change_pct_24h
+FROM ${ref("stg_coin_snapshots")}
+
+${when(incremental(),
+  `WHERE snapshot_date > (SELECT MAX(snapshot_date) FROM ${self()})`
+)}
