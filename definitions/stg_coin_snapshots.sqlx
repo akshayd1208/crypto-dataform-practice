@@ -1,0 +1,17 @@
+config {
+  type: "view",
+  schema: "dataform_staging",
+  description: "Cleaned snapshot of raw CoinGecko pulls"
+}
+
+SELECT
+  DATE(snapshot_date) AS snapshot_date,
+  coin_id,
+  symbol,
+  name,
+  CAST(current_price AS NUMERIC) AS current_price,
+  CAST(market_cap AS INT64) AS market_cap,
+  CAST(market_cap_rank AS INT64) AS market_cap_rank,
+  CAST(total_volume AS INT64) AS total_volume,
+  price_change_pct_24h
+FROM `dataform-505716.raw.coin_snapshots`
